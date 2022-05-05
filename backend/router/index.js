@@ -6,10 +6,9 @@ router.post('/create-wallet', blockchainController.postCreateWallet);
 
 router.get('/my-wallet', blockchainController.getInfo);
 
-router.get('/history-transaction', blockchainController.getHistory);
+router.get('/history', blockchainController.getHistory);
 
-router.post('/send-transaction', blockchainController.postSend);
+router.post('/send', blockchainController.postSend);
 
-router.post('/mining', blockchainController.postMining);
 
 module.exports = router;

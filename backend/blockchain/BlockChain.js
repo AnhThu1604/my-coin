@@ -1,4 +1,4 @@
-let hash = require('object-hash');
+
 const { v1 } = require('uuid'); 
 const SHA256 = require('sha256');
 const concat = require('lodash/concat');
@@ -6,129 +6,137 @@ let blockChainModel = require('../model/BlockChain');
 
 class BlockChain {
     constructor() {
-        this.chain = [];
-        this.curr_transaction = [];
+      this.chain = [];
+      this.curr_transactions = [];
     }
-}
-
-BlockChain.prototype.getLastBlock = async function() {
-    return await blockChainModel.getLastSchema;
-}
-
-BlockChain.prototype.mining = async function(level, prevHash, currHash){
-    let nonce = 0;
-    let hash = this.hashBlock(prevHash, currHash, nonce);
-    while(hash.substring(0,level)!=Array(level+1).join("0")){
-        nonce++;
-        hash = this.hashBlock(prevHash, currHash, nonce);
+  }
+  
+  
+  BlockChain.prototype.getLastBlock = async function() {
+    return await blockChainModel.getLastSchema()
+  }
+  
+  BlockChain.prototype.addNewBlock = async function(prevHash, type = 1) {
+    let block = {
+      index: 0,
+      timestamp: Date.now(),
+      transactions: this.curr_transactions,
+      prevHash: prevHash
     };
-}
-
-BlockChain.prototype.hashBlock = async function(prevHash, block, nonce){
-    return SHA256(prevHash + nonce.toString() + JSON.stringify(block));
-}
-
-BlockChain.prototype.proofOfWork = async function(prevHash, currHash){
+  
+  
+    const lastBlock = await this.getLastBlock()
+  
+    let nonce
+    if (lastBlock) {
+      block.prevHash = lastBlock.hash
+      block.index = lastBlock.index + 1
+      nonce = type === 1 ? this.proofOfWork(lastBlock.hash, block) : await this.mining(5, lastBlock.hash, block)
+    } else {
+      nonce = this.proofOfWork('', block)
+    }
+    
+    let hash = this.hashBlock(prevHash, block, nonce)
+    block.nonce = nonce
+    block.hash = hash
+  
+    let result = await blockChainModel.createBlockChain(block)
+  
+    this.chain.push(result);
+    this.curr_transactions = [];
+    return result;
+  }
+  
+  BlockChain.prototype.addNewTransaction = function(sender, recipient, amount) {
+    this.curr_transactions.push({
+      transactionId: v1().split('-').join(''),
+      sender,
+      recipient,
+      amount
+    });
+    
+  
+  }
+  
+  BlockChain.prototype.proofOfWork = function(previousHash = '', currentHash) {
     let nonce = 0;
-    let hash = this.hashBlock(prevHash, currHash, nonce);
-    while((await hash).substring(0,4) !== '0000') {
-        nonce++;
-        hash = this.hashBlock(prevHash, currHash, nonce);
-
+    let hash = this.hashBlock(previousHash, currentHash, nonce);
+    while (hash.substring(0, 4) !== '0000') {
+      nonce++;
+      hash = this.hashBlock(previousHash, currentHash, nonce);
     }
     return nonce;
-}
-
-BlockChain.prototype.addNewBlock = async function(prevHash, type = 1){
-    let block ={
-        index: 0,
-        timesttamp: Date.now(),
-        transaction: this.curr_transaction,
-        prevHash: prevHash
+  }
+  
+  BlockChain.prototype.mining = async function (level, previousHash = '', currentHash) {
+    let nonce = 0;
+    let hash = this.hashBlock(previousHash, currentHash, nonce);
+    while (hash.substring(0, level) !== Array(level + 1).join("0")) {
+      nonce++;
+      hash = this.hashBlock(previousHash, currentHash, nonce);
+  
     }
-
-    const lastBlock = await this.getLastBlock();
-    let nonce
-    if(lastBlock){
-        block.prevHash = lastBlock.hash;
-        block.index = lastBlock.index + 1;
-        nonce = tupy === 1 ? this.proofOfWork(lastBlock.hash, block) : await this.mining(5, lastBlock.hask, block)
-    }else{
-        nonce = this.proofOfWork('', block);
-    }
-    let hash = this.hashBlock(prevHash, block, nonce);
-    block.nonce = nonce;
-    block.hash = hash;
-    let result = await blockChainModel.createBlockChain(block);
-    this.chain.push(result);
-    this.curr_transaction = [];
-    return result;
-
-}
-
-BlockChain.prototype.addNewTransaction = function (sender, recipient, amount){
-    this.curr_transaction.push({
-        transactionId: v1().split('-').join(''),
-        sender, 
-        recipient,
-        amount
-    })
-}
-
-BlockChain.prototype.lastBlock = async function(){
-    return this.chain.slice(-1)[0];
-}
-
-BlockChain.prototype.isEmpty = async function(){
-    return this.cjain.length === 0;
-}
-
-BlockChain.prototype.getAddressData = async function(address){
-    let blocks = await blockChainModel.getAll();
-    const addressTransaction = [];
+    return nonce
+  }
+  
+  BlockChain.prototype.lastBlock = async function() {
+    return this.chain.slice(-1)[0]
+  }
+  
+  BlockChain.prototype.isEmpty = async function() {
+    return this.chain.length === 0
+  }
+  
+  BlockChain.prototype.hashBlock = function(previousHash = '', block, nonce) {
+    return SHA256(previousHash + nonce.toString() + JSON.stringify(block))
+  }
+  
+  BlockChain.prototype.getAddressData = async function(address) {
+    let blocks = await blockChainModel.getAll()
+    const addressTransactions = [];
     const addressBlocks = [];
-
-    blocks.forEach(({timesttamps, transaction, index, prevHash, hash, nonce}) => {
-        transaction.forEach(transaction =>{
-            if(transaction.sender === address || transaction.recipient === address){
-                addressTransaction.push({...transaction, timesttamps});
-                addressBlocks.push({index, prevHash, hash, nonce, timesttamps})
-            }
-        })
-        
+  
+    blocks.forEach(({timestamps, transactions, index, prevHash, hash, nonce}) => {
+      transactions.forEach(transaction => {
+          if (transaction.sender === address || transaction.recipient === address) {
+            addressTransactions.push({...transaction, timestamps}); 
+            addressBlocks.push({index, prevHash, hash, nonce, timestamps})
+          };
+      });
     });
-    if(addressTransaction == null)
-    return false;
+  
+    if (addressTransactions == null) return false;
+  
     var amountArr = [];
     let balance = 0;
-    addressTransaction.forEach(transaction => {
-        if(transaction.recipient === address){
-            balance += transaction.amount;
-            amountArr.push(balance);
-        }
-        else if(transaction.sender === address){
-            balance -= transaction.amount;
-            amountArr.push(balance);
-        }
-    })
+  
+    addressTransactions.forEach(transaction => {
+      if (transaction.recipient === address) {
+        balance += transaction.amount;
+        amountArr.push(balance);
+      }
+      else if (transaction.sender === address) {
+        balance -= transaction.amount;
+        amountArr.push(balance);
+      }
+    });
+  
     return {
-        transaction: addressTransaction,
-        addressBalance: balance,
-        amountArr: amountArr,
-        blocks: addressBlocks
-    }
-}
-
-BlockChain.prototype.getAddressAllData = async function() {
-    let block = await blockChainModel.getLastSchema();
-    let resultBlock = block.map(({timesttamps, index, prevHash, hash, nonce}) => 
-    ({timesttamps, index, prevHash, hash, nonce}));
-    let resultTransaction = block.map(({timesttamps, transactions})=> transactions.map(item => ({...item, timesttamps})))
-
+      transactions: addressTransactions,
+      addressBalance: balance,
+      amountArr: amountArr,
+      blocks: addressBlocks
+    };
+  }
+  
+  BlockChain.prototype.getAddressAllData = async function() {
+    let blocks = await blockChainModel.getLastAllSchema()
+    let resultBlocks = blocks.map(({timestamps, index, prevHash, hash, nonce}) => ({timestamps, index, prevHash, hash, nonce}))
+    let resultTransactions = blocks.map(({timestamps, transactions}) => transactions.map(item => ({...item, timestamps})))
+    
     return {
-        transaction: concat(...resultTransaction), 
-        block: resultBlock
+      transactions: concat(...resultTransactions),
+      blocks: resultBlocks
     }
-}
-
-module.exports = BlockChain
+  }
+  module.exports = BlockChain;

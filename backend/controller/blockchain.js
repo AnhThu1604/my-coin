@@ -1,83 +1,75 @@
-const bodyParser = require('body-parser');
+
 const SHA256 = require('sha256');
 const { v1 } = require('uuid');
-const modeAddressWallet = require('../model/AddressWallet');
+let modelAddressWallet = require('../model/AddressWallet');
 
 let BlockChain = require('../blockchain/BlockChain');
 
 let blockchain = new BlockChain();
 const checkWallet = require('../middleware');
 
-exports.postCreateWallet = (req, res) => {
+exports.postCreateWallet = async (req, res) => {
     const privateKey = v1().split('-').join('');
     const address = {
         private: privateKey,
         public: SHA256(privateKey)
     };
-
-    modeAddressWallet.createAddress(address)
-    blockchain.addNewTransaction('system-admin', address.public, 1000)
-    blockChain.addNewBlock(null)
+    await modelAddressWallet.createAddress(address)
+    await blockchain.addNewTransaction('system', address.public,1000);
+    await blockchain.addNewBlock(null)
     res.json({
-        status: 'ok',
+        status: 200,
         address: address.public,
         pk: privateKey
     })
 
 }
 
-exports.getInfo = (req, res) => {
+exports.getInfo = async (req, res) => {
     checkWallet;
-    const { address = '' } = req.query;
-    let info = blockchain.getAddressData(address);
+    const { address } = req.query;
+    let info = await blockchain.getAddressData(address);
     return res.json(info);
 }
 
-exports.postMining = (req, res) => {
+exports.postSend = async (req, res) => {
     checkWallet;
-    const { address = '' } = req.query;
-    blockchain.addNewTransaction('system-admin', address, 100);
-    blockChain.addNewBlock(null, 2);
-    return res.json({ status: 'success', coin: 100 });
-}
-
-exports.postSend = (req, res) => {
-    checkWallet;
+    console.log(req.body);
     const {
-        sender ='', 
-        recipient = '',
+        sender,
+        recipient,
         amount
     } = req.body;
-    let infoSender = blockchain.getAddressData(sender);
-    if(infoSender.addressBalance < + amount){
+    let infoSender = await blockchain.getAddressData(sender);
+    if (infoSender.addressBalance < amount) {
         return res.json({
-            status: 'error',
+            status: 404,
             message: 'Your wallet is not enough coin!'
         })
     }
-    blockchain.addNewTransaction(sender, recipient, amount);
-     blockchain.addNewTransaction('system', sender, 2);
-     blockchain.addNewBlock(null);
+    await blockchain.addNewTransaction(sender, recipient, amount);
+    await blockchain.addNewTransaction('system', sender, 1);
+    await blockchain.addNewBlock(null);
     return res.json({
-        status: 'ok',
+        status: 200,
         message: 'Send transaction success'
     })
 }
 
-exports.getHistory = (req, res) => {
-    const {address = ''} = req.query;
-    if(address){
+exports.getHistory = async (req, res) => {
+    const { address } = req.query;
+    if (address) {
         let param = {
             public: address
         }
-        let result =  modeAddressWallet.getAddress(param);
-        if(result.length === 0) res.json({
-            status: 'error',
+        let result = await modeAddressWallet.getAddress(param);
+        if (result.length === 0) res.json({
+            status: 404,
             message: 'Your wallet not avaible'
         })
-        let info = blockchain.getAddressData(address);
+        let info = await blockchain.getAddressData(address);
         return res.json(info);
     }
-    let result = blockChain.getAddressData()
+    let result = await blockchain.getAddressAllData()
     res.json(result);
 }

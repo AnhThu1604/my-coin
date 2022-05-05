@@ -1,7 +1,7 @@
 let mongoose = require('mongoose');
 let Schema = mongoose.Schema;
 
-let BlockChainSchema = new Schema({
+let BlockChain = new Schema({
     index: {
         type: Schema.Types.Number
     },
@@ -9,7 +9,7 @@ let BlockChainSchema = new Schema({
         type: Schema.Types.Date,
         default: Date.now()
     },
-    transaction: {
+    transactions: {
         type: Schema.Types.Array
     },
     prevHash:{
@@ -23,7 +23,7 @@ let BlockChainSchema = new Schema({
     }
 })
 
-let Collection = mongoose.model('BlockChainSchema', BlockChainSchema);
+let Collection = mongoose.model('BlockChain', BlockChain);
 module.exports = {
     createBlockChain: async function(block){
         return await Collection.insertMany(block)

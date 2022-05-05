@@ -11,7 +11,7 @@ const checkWallet = async (req, res, next) => {
         let result = await modeAddressWallet.getAddress(param);
         if(result.length === 0){
         return res.json({
-            status: 'error',
+            status: 404,
             message: 'Your wallet not avaible'
         })
         }else{
