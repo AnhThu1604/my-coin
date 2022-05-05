@@ -1,0 +1,14 @@
+.heading-item {
+    text-decoration: none;
+    color: #fff;
+
+}
+
+.heading-item:hover {
+    color: rgb(206, 200, 200);
+}
+
+.navbar {
+    background-color: #06201b;
+    min-height: 80px;
+}

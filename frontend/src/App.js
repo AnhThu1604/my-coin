@@ -1,25 +1,45 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { Component } from 'react';
+import { BrowserRouter as Router, Switch, Route, Redirect } from 'react-router-dom';
+import { createBrowserHistory } from 'history';
+import routes from './routes';
 
-function App() {
+import Header from './components/header/Header';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import store from './redux/store';
+import { Provider } from 'react-redux';
+
+const history = createBrowserHistory();
+
+function RouteWithSubRoutes(route) {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Route
+      path={route.path}
+      exact={route.exact}
+      render={props => {
+        const { location: { pathname } = {} } = props
+        return pathname === '/' ? <Redirect to="/create-wallet"/> : <route.component {...props} routes={route.routes} />
+      }}
+    />
   );
 }
 
-export default App;
+export default class App extends Component {
+  render() {
+    return (
+      <Provider store={store}>
+        <Router history={history}>
+          <div className="layout">
+            <Header/>
+            <div className="layout__wrapper">
+              <Switch>
+                {routes.map((route, index) => (
+                  <RouteWithSubRoutes key={index} {...route}/>
+                ))}
+              </Switch>
+            </div>
+          </div>
+        </Router>
+      </Provider>
+    )
+  }
+}
