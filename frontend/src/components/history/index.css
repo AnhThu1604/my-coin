@@ -9,14 +9,14 @@
     align-items: center;
     justify-content: center;
     padding: 10px 10px;
-    
+
     color: #fff;
     margin: 10px 0;
-   
+
 
 }
 
-.history__container{
+.history__container {
     display: flex;
     justify-self: center;
 }
@@ -56,5 +56,21 @@ span {
     background-color: #d4d2d2;
     font-size: 14px;
 
+
+}
+
+.cel-hash {
+    max-width: 200px;
+    word-wrap: break-word;
+}
+
+.cel-age {
+    max-width: 100px;
+}
+
+.cel-from,
+.cel-to {
+    max-width: 426px;
+    word-wrap: break-word;
 
 }

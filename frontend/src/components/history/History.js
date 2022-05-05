@@ -33,10 +33,10 @@ export default function History() {
         <thead>
           <tr>
             <th className="cel-hash">Txn Hash</th>
-            <th className="cel-age">Age</th>
+            <th className="cel-age">Time</th>
             <th className="cel-from">From</th>
             <th className="cel-to">To</th>
-            <th className="cel-val">Value</th>
+            <th className="cel-val">Amount</th>
           </tr>
         </thead>
         <tbody>

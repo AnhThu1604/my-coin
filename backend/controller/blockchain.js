@@ -62,7 +62,7 @@ exports.getHistory = async (req, res) => {
         let param = {
             public: address
         }
-        let result = await modeAddressWallet.getAddress(param);
+        let result = await modelAddressWallet.getAddress(param);
         if (result.length === 0) res.json({
             status: 404,
             message: 'Your wallet not avaible'
